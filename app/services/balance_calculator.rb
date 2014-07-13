@@ -1,11 +1,13 @@
+require 'timeseries_cache'
+
 class BalanceCalculator
-  attr_reader :account, :date_from, :date_to, :date_range
+  attr_reader :account, :date_from, :date_to, :cache
 
   def initialize(options)
     @account = options.fetch(:account)
     @date_from = options.fetch(:date_from)
     @date_to = options.fetch(:date_to)
-    @date_range = date_from..date_to
+    @cache = TimeseriesCache.new(key: "account_balance:#{account.id}", ttl: 1.day)
   end
 
   def closing_balance
@@ -13,7 +15,7 @@ class BalanceCalculator
   end
 
   def balances
-    @balances ||= date_range.map do |date|
+    cache.fetch_range(date_from, date_to) do |date|
       Balance.new(date: date, balance: balance_for(date), account_id: account.id)
     end
   end
