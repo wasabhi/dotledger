@@ -28,6 +28,10 @@ gem 'bootstrap-sass'
 
 gem 'font-awesome-rails'
 
+gem 'redis'
+
+gem 'redis-namespace'
+
 group :development, :test do
   gem 'quiet_assets'
   gem 'rspec-rails'
