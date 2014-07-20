@@ -1,4 +1,4 @@
-require 'timeseries_cache'
+require 'timeseries_cache/timeseries_cache'
 
 class BalanceCalculator
   attr_reader :account, :date_from, :date_to, :cache
@@ -7,7 +7,7 @@ class BalanceCalculator
     @account = options.fetch(:account)
     @date_from = options.fetch(:date_from)
     @date_to = options.fetch(:date_to)
-    @cache = TimeseriesCache.new(key: "account_balance:#{account.id}", ttl: 1.day)
+    @cache = TimeseriesCache::Day.new(key: "account_balance:#{account.id}", ttl: 1.day)
   end
 
   def closing_balance

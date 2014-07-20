@@ -1,18 +1,24 @@
-require 'timeseries_cache'
+require 'spec_helper'
+require 'timeseries_cache/timeseries_cache'
 
-describe TimeseriesCache do
+describe TimeseriesCache::Base do
   let(:redis) { double('redis') }
   let(:key) { 'test_key' }
   let(:datetime) { DateTime.parse('2011-03-06 12:15:00') }
-  let(:datetime_from) { DateTime.parse('2011-03-06') }
-  let(:datetime_to) { DateTime.parse('2011-03-29') }
+  let(:datetime_from) { DateTime.parse('2011-03-01') }
+  let(:datetime_to) { DateTime.parse('2012-01-01') }
   let(:value) { "test value" }
   let(:prefixed_key) { "#{key}:some_timestamp" }
   let(:block) do
     proc { value }
   end
 
-  subject { TimeseriesCache.new(key: key, redis: redis) }
+  before do
+    allow(subject).to receive(:timestep).and_return(->(datetime) { datetime })
+    allow(subject).to receive(:normalize_datetime).and_return(->(datetime) { datetime })
+  end
+
+  subject { TimeseriesCache::Base.new(key: key, redis: redis) }
 
   describe ".get" do
     context "value is set" do
@@ -56,30 +62,6 @@ describe TimeseriesCache do
       it "sets the value" do
         expect(subject).to receive(:set).with(datetime, &block)
         subject.fetch(datetime, &block)
-      end
-    end
-  end
-
-  describe ".fetch_range" do
-    context "with no values set" do
-      it "yields and sets the value the correct number of times" do
-        expect(subject).to receive(:set?).exactly(24).times.and_return(false)
-        expect(subject).to receive(:set).exactly(24).times.and_call_original
-        allow(redis).to receive(:set)
-        expect do |b|
-          subject.fetch_range(datetime_from, datetime_to, &b)
-        end.to yield_control.exactly(24).times
-      end
-    end
-
-    context "with all values set" do
-      it "does not yield and gets the value from redis the correct number of times" do
-        expect(subject).to receive(:set?).exactly(24).times.and_return(true)
-        expect(subject).to receive(:get).exactly(24).times.and_call_original
-        allow(redis).to receive(:get).and_return(subject.dump_value(value))
-        expect do |b|
-          subject.fetch_range(datetime_from, datetime_to, &b)
-        end.to_not yield_control
       end
     end
   end
